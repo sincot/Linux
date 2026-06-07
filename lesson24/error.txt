@@ -1,0 +1,3 @@
+这是一条错误细信息
+这是一条错误信息,write
+perror: Success
