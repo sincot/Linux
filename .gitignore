@@ -6,3 +6,13 @@
 *.ipch
 *.suo
 *.user
+*.tlog
+*.obj
+*.idb
+*.exe
+*.pdb
+*.lastbuildstate
+*.ilk
+*.vcxproj
+*.vcxproj.filters
+*.sln
