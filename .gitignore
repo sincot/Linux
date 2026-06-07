@@ -1,0 +1,8 @@
+".vs/" 
+"*.ipch" 
+"*.suo" 
+"*.user" 
+.vs/
+*.ipch
+*.suo
+*.user
