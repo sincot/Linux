@@ -16,3 +16,6 @@
 *.vcxproj
 *.vcxproj.filters
 *.sln
+*.log
+*.enc
+*.recipe
