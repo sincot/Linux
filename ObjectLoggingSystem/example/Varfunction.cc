@@ -223,9 +223,9 @@
 //     return 0;
 // }
 
-// 简答工厂模式：通过参数控制可以生成任意产品
+// 简单工厂模式：通过参数控制可以生成任意产品
 // 简单工厂模式的优点：简单且易于理解，什么类型就创建什么类型的对象
-// 简答工厂模式的缺点：
+// 简单工厂模式的缺点：
 // 1. 所有东西生产在依次，产品太多会导致代码量庞大
 // 2. 简单工厂模式违背了开闭原则（对扩展开放，对修改关闭），若又新增了一种产品，需要修改工厂方法
 /********************** 简答工厂模式 ***********************/
@@ -498,40 +498,39 @@
 
 /********************** 代理模式 ***********************/
 /* 房东要把⼀个房子通过中介租出去理解代理模式 */
-class RentHouse     // 租房
-{
-public:
-    virtual void rentHouse() = 0;       // 纯虚函数
-};
+// class RentHouse     // 租房
+// {
+// public:
+//     virtual void rentHouse() = 0;       // 纯虚函数
+// };
 
-class LandHoster : public RentHouse     // 房东（目标类）
-{
-public:
-    void rentHouse()    { std::cout << "将房子出租出去" << std::endl; }
-};
+// class LandHoster : public RentHouse     // 房东（目标类）
+// {
+// public:
+//     void rentHouse()    { std::cout << "将房子出租出去" << std::endl; }
+// };
 
-class Intermediary : public RentHouse   // 中介（代理类）     中介类实现了对房东类的功能加强
-{
-public:
-    void rentHouse()
-    { 
-        std::cout << "发布招租启示" << std::endl;
-        std::cout << "带人看房" << std::endl;
-        _landhoster.rentHouse();    // 将房子出租出去
-        std::cout << "负责租后维修" << std::endl;
-    }
+// class Intermediary : public RentHouse   // 中介（代理类）     中介类实现了对房东类的功能加强
+// {
+// public:
+//     void rentHouse()
+//     { 
+//         std::cout << "发布招租启示" << std::endl;
+//         std::cout << "带人看房" << std::endl;
+//         _landhoster.rentHouse();    // 将房子出租出去
+//         std::cout << "负责租后维修" << std::endl;
+//     }
 
-private:
-    LandHoster _landhoster;
-};
+// private:
+//     LandHoster _landhoster;
+// };
 
 
-int main()
-{
-    Intermediary intermediary;
-    intermediary.rentHouse();
+// int main()
+// {
+//     Intermediary intermediary;
+//     intermediary.rentHouse();
 
-    return 0;
-}
+//     return 0;
+// }
 /********************** 代理模式 ***********************/
-
