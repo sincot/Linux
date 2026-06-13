@@ -9,15 +9,17 @@
     7. 日志器名称（当前支持多日志器的同时使用）
 */
 
+#ifndef MY_LOGMESSAGE_H
+#define MY_LOGMESSAGE_H
+
 #include "Util.hpp"
 #include "LogLevel.hpp"
 
 #include <ctime>
 #include <thread>
 #include <iostream>
+#include <string>
 
-#ifndef MY_LOGMESSAGE_H
-#define MY_LOGMESSAGE_H
 namespace Log
 {
     class LogMessage
@@ -36,8 +38,8 @@ namespace Log
         _logger(logger),
         _payload(payload){}
 
-    private:
-        size_t _ctime;                  // 日志产生的时时间戳
+    public:
+        time_t _ctime;                  // 日志产生的时时间戳
         LogLevel::value _level;         // 日志等级
         std::string _file;              // 源文件名称
         size_t _line;                   // 源代码行号
