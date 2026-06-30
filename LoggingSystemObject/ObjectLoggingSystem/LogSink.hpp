@@ -34,6 +34,7 @@ namespace Log
         virtual ~LogSink() = default;       // 提供默认实现
         virtual void Sink(const char* data, size_t len) = 0;    // 日志落地
 
+        // 往后在进行多模块关联的时候，通过抽象来关联各个模块的，是通过指针来完成访问的，因此定义一个基类指针
         using ptr = std::shared_ptr<LogSink>;   // 管理基类
     };
 
@@ -60,7 +61,7 @@ namespace Log
 
             // 2. 创建并打开日志文件
             _ofs.open(_filename, std::ios::binary | std::ios::app);     // 以写的方式打开文件，将日志信息追加到文件末尾
-            assert(_ofs.is_open());     // 文件是否被打开 没有被打开，程序退出
+            assert(_ofs.is_open());     // 判断文件是否被打开 没有被打开，程序退出
         }
 
         void Sink(const char* data, size_t len)
@@ -85,16 +86,17 @@ namespace Log
             std::string pathname = CreateNewFile();
 
             // 2. 创建日志文件所在的目录
-            util::File::CreateDirectoy(util::File::GetPath(pathname));
+            util::File::CreateDirectory(util::File::GetPath(pathname));
 
             // 3. 创建并打开日志文件
             _ofs.open(pathname, std::ios::binary | std::ios::app);     // 以写的方式打开文件，将日志信息追加到文件末尾
-            assert(_ofs.is_open());     // 文件是否被打开 没有被打开，程序退出
+            assert(_ofs.is_open());     // 判断文件是否被打开 没有被打开，程序退出
         }
 
         // 将日志消息写入到标准输出，写入前判断文件大小，超过了最大大小就要切换文件
         void Sink(const char* data, size_t len)
         {
+            // 写入前判断文件大小，超过了最大大小就要切换文件
             if(_cur_fsize >= _max_fsize)
             {
                 _ofs.close();   // 关闭原来的已经打开的文件 不然会造成资源泄漏
@@ -103,11 +105,11 @@ namespace Log
                 // 打开新的文件
                 _ofs.open(pathname, std::ios::binary | std::ios::app);     // 以写的方式打开文件，将日志信息追加到文件末尾
                 assert(_ofs.is_open());     // 文件是否被打开 没有被打开，程序退出
-                _cur_fsize = 0;     // 清 0
+                _cur_fsize = 0;             // 清 0     打开的新的文件的文件大小为0
             }
-            _ofs.write(data, len);
-            assert(_ofs.good());
-            _cur_fsize += len;
+            _ofs.write(data, len);          // 向滚动文件写入 len 长度的信息
+            assert(_ofs.good());            // 判断文件句柄是否正常
+            _cur_fsize += len;              
         }
 
     private:
@@ -131,8 +133,8 @@ namespace Log
             };
             */
             struct tm s_tm = Log::SafeLocalTime(time);      // 接收转化后的时间结构
-            std::stringstream filename;
 
+            std::stringstream filename;
             filename << _basename << "-"
                     << std::setfill('0')  // 设置填充字符为 '0'
                     << std::setw(4) << (s_tm.tm_year + 1900)   // 年份4位
@@ -163,6 +165,7 @@ namespace Log
         1. 以时间进行文件滚动，实际上是以时间段进行滚动     
         实现思想：以当前系统时间，取模时间段大小，可以得到当前时间段是第几个时间段
         time(nullptr) % gap   time(nullptr) % 60  以分钟进行滚动 当前就是第 n 个60s
+        每次以当前系统时间取模，判断与当前文件的时间段是否一致，不一致就代表不是同一个时间段
     */
 
     enum class TimeGap
@@ -181,21 +184,23 @@ namespace Log
         RollByTimeSink(const std::string &basename, TimeGap gap_type)    // 用户自己设计一个时间段的大小
             : _basename(basename)
         {
-            switch(gap_type)
+            switch(gap_type)    // 初始化 gap_size
             {
-                case TimeGap::GAP_SECOND: _gap_size = 1; break;
-                case TimeGap::GAP_MINUTE: _gap_size = 60; break;
-                case TimeGap::GAP_HOUR:  _gap_size = 60*60; break;
-                case TimeGap::GAP_MDAY: _gap_size = 24*60*60; break;
+                case TimeGap::GAP_SECOND: _gap_size = 1; break;         // 秒
+                case TimeGap::GAP_MINUTE: _gap_size = 60; break;        // 分
+                case TimeGap::GAP_HOUR:  _gap_size = 60*60; break;      // 时
+                case TimeGap::GAP_MDAY: _gap_size = 24*60*60; break;    // 天
             }
             
-            // 如果 _gap_size 为 1，任何数取模1都为0，因此需要做特殊的处理
+            // 如果 _gap_size 为 1，任何数取模1都为0，那么当前的时间段就是当前系统时间
+            // 此外，计算当前是第几个时间段，都是使用当前系统时间模上 _gap_size 用户设计的时间单位
             _cur_gap = _gap_size == 1 ? util::Date::GetTime() : util::Date::GetTime() % _gap_size;   // 当前是第几个时间段
+            
             // 1. 根据基础文件名生成实际文件名
             std::string pathname = CreateNewFile();
 
             // 2. 创建日志文件所在的目录
-            util::File::CreateDirectoy(util::File::GetPath(pathname));
+            util::File::CreateDirectory(util::File::GetPath(pathname));
 
             // 3. 创建并打开日志文件
             _ofs.open(pathname, std::ios::binary | std::ios::app);     // 以写的方式打开文件，将日志信息追加到文件末尾
@@ -207,7 +212,7 @@ namespace Log
         {
             // 获取当前的系统时间
             time_t curtime =  util::Date::GetTime();
-            // 判断当前时间是否是当前文件的时间段
+            // 判断当前时间是否是当前文件的时间段，不是则切换文件
             if((curtime % _gap_size) != _cur_gap)
             {
                 _ofs.close();       // 关闭原来的文件
@@ -227,7 +232,6 @@ namespace Log
             // 获取系统时间，以时间来构造文件的扩展名
             time_t time = util::Date::GetTime();
 
-            struct tm s_tm;     // 接收转化后的时间结构
             /*
             struct tm {
                int tm_sec;    // Seconds (0-60)
@@ -241,9 +245,9 @@ namespace Log
                int tm_isdst;  // Daylight saving time 
             };
             */
-            localtime_r(&time, &s_tm);      // 将 time 时间戳转换成时间结构
-            std::stringstream filename;
+            struct tm s_tm = Log::SafeLocalTime(time);      // 接收转化后的时间结构
 
+            std::stringstream filename;
             filename << _basename << "-"
                     << std::setfill('0')  // 设置填充字符为 '0'
                     << std::setw(4) << (s_tm.tm_year + 1900)   // 年份4位
